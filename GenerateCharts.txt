@@ -1,0 +1,160 @@
+Option Explicit
+
+Sub CreateAdidasDashboardCharts()
+
+    Dim wb As Workbook
+    Dim wsDash As Worksheet
+    Dim wsPivots As Worksheet
+    
+    Dim ptSalesTrend As PivotTable
+    Dim ptUnitsTrend As PivotTable
+    Dim ptRegionSales As PivotTable
+    Dim ptProductSales As PivotTable
+    Dim ptProductProfit As PivotTable
+    Dim ptRetailerSales As PivotTable
+    Dim ptSalesMethod As PivotTable
+    
+    Dim shp As Shape
+    Dim shpArr(1 To 7) As Shape
+    Dim i As Long
+    
+    Dim co As ChartObject
+    
+    Set wb = ThisWorkbook
+    Set wsDash = wb.Worksheets("Sheet1")          ' dashboard layout
+    Set wsPivots = wb.Worksheets("Adidas_Pivots") ' pivot sheet
+    
+    ' --- Get the PivotTables by name ---
+    Set ptSalesTrend = wsPivots.PivotTables("ptSalesTrend")
+    Set ptUnitsTrend = wsPivots.PivotTables("ptUnitsTrend")
+    Set ptRegionSales = wsPivots.PivotTables("ptRegionSales")
+    Set ptProductSales = wsPivots.PivotTables("ptProductSales")
+    Set ptProductProfit = wsPivots.PivotTables("ptProductProfit")
+    Set ptRetailerSales = wsPivots.PivotTables("ptRetailerSales")
+    Set ptSalesMethod = wsPivots.PivotTables("ptSalesMethod")
+    
+    ' --- We assume: first 5 shapes = KPI boxes, next 7 = chart placeholders ---
+    If wsDash.Shapes.Count < 12 Then
+        MsgBox "Sheet1 must have at least 12 shapes (5 KPI + 7 chart placeholders).", vbExclamation
+        Exit Sub
+    End If
+    
+    ' Store the 7 chart placeholders (shapes 6–12)
+    For i = 1 To 7
+        Set shpArr(i) = wsDash.Shapes(5 + i)
+    Next i
+    
+    ' Remove existing charts from the dashboard sheet
+    For i = wsDash.ChartObjects.Count To 1 Step -1
+        wsDash.ChartObjects(i).Delete
+    Next i
+    
+    ' ----------------------------------------------------
+    ' 1. Sales Trend Over Time  (ptSalesTrend)  -> placeholder 1
+    ' ----------------------------------------------------
+    Set co = wsDash.ChartObjects.Add(Left:=0, Top:=0, Width:=100, Height:=100)
+    co.Name = "ch_SalesTrend"
+    co.Chart.SetSourceData ptSalesTrend.TableRange1
+    co.Chart.ChartType = xlLine
+    
+    With shpArr(1)
+        co.Left = .Left
+        co.Top = .Top
+        co.Width = .Width
+        co.Height = .Height
+    End With
+    
+    ' ----------------------------------------------------
+    ' 2. Units Sold Trend  (ptUnitsTrend)  -> placeholder 2
+    ' ----------------------------------------------------
+    Set co = wsDash.ChartObjects.Add(Left:=0, Top:=0, Width:=100, Height:=100)
+    co.Name = "ch_UnitsTrend"
+    co.Chart.SetSourceData ptUnitsTrend.TableRange1
+    co.Chart.ChartType = xlLine        ' you can change to xlArea if you like
+    
+    With shpArr(2)
+        co.Left = .Left
+        co.Top = .Top
+        co.Width = .Width
+        co.Height = .Height
+    End With
+    
+    ' ----------------------------------------------------
+    ' 3. Sales by Region  (ptRegionSales)  -> placeholder 3
+    ' ----------------------------------------------------
+    Set co = wsDash.ChartObjects.Add(Left:=0, Top:=0, Width:=100, Height:=100)
+    co.Name = "ch_RegionSales"
+    co.Chart.SetSourceData ptRegionSales.TableRange1
+    co.Chart.ChartType = xlColumnClustered
+    
+    With shpArr(3)
+        co.Left = .Left
+        co.Top = .Top
+        co.Width = .Width
+        co.Height = .Height
+    End With
+    
+    ' ----------------------------------------------------
+    ' 4. Sales by Product Category  (ptProductSales)  -> placeholder 4
+    ' ----------------------------------------------------
+    Set co = wsDash.ChartObjects.Add(Left:=0, Top:=0, Width:=100, Height:=100)
+    co.Name = "ch_ProductSales"
+    co.Chart.SetSourceData ptProductSales.TableRange1
+    co.Chart.ChartType = xlColumnClustered     ' or xlBarClustered
+    
+    With shpArr(4)
+        co.Left = .Left
+        co.Top = .Top
+        co.Width = .Width
+        co.Height = .Height
+    End With
+    
+    ' ----------------------------------------------------
+    ' 5. Operating Profit by Product  (ptProductProfit)  -> placeholder 5
+    ' ----------------------------------------------------
+    Set co = wsDash.ChartObjects.Add(Left:=0, Top:=0, Width:=100, Height:=100)
+    co.Name = "ch_ProductProfit"
+    co.Chart.SetSourceData ptProductProfit.TableRange1
+    co.Chart.ChartType = xlColumnClustered
+    
+    With shpArr(5)
+        co.Left = .Left
+        co.Top = .Top
+        co.Width = .Width
+        co.Height = .Height
+    End With
+    
+    ' ----------------------------------------------------
+    ' 6. Sales by Retailer  (ptRetailerSales)  -> placeholder 6
+    ' ----------------------------------------------------
+    Set co = wsDash.ChartObjects.Add(Left:=0, Top:=0, Width:=100, Height:=100)
+    co.Name = "ch_RetailerSales"
+    co.Chart.SetSourceData ptRetailerSales.TableRange1
+    co.Chart.ChartType = xlColumnClustered
+    
+    With shpArr(6)
+        co.Left = .Left
+        co.Top = .Top
+        co.Width = .Width
+        co.Height = .Height
+    End With
+    
+    ' ----------------------------------------------------
+    ' 7. Sales Method Performance  (ptSalesMethod)  -> placeholder 7
+    ' ----------------------------------------------------
+    Set co = wsDash.ChartObjects.Add(Left:=0, Top:=0, Width:=100, Height:=100)
+    co.Name = "ch_SalesMethod"
+    co.Chart.SetSourceData ptSalesMethod.TableRange1
+    co.Chart.ChartType = xlDoughnut
+    
+    With shpArr(7)
+        co.Left = .Left
+        co.Top = .Top
+        co.Width = .Width
+        co.Height = .Height
+    End With
+    
+    MsgBox "Charts created and fitted to placeholders on Sheet1.", vbInformation
+
+End Sub
+
