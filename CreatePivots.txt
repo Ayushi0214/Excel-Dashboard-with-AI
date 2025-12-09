@@ -1,0 +1,219 @@
+Option Explicit
+
+Sub CreateAdidasPivots()
+
+    Dim wb As Workbook
+    Dim wsData As Worksheet
+    Dim wsPivots As Worksheet
+    Dim pc As PivotCache
+    Dim srcData As Range
+    Dim lastRow As Long, lastCol As Long
+    
+    Set wb = ThisWorkbook
+    Set wsData = wb.Worksheets("Data Sales Adidas") ' <-- data sheet name
+    
+    ' Detect used range
+    lastRow = wsData.Cells(wsData.Rows.Count, "A").End(xlUp).Row
+    lastCol = wsData.Cells(1, wsData.Columns.Count).End(xlToLeft).Column
+    Set srcData = wsData.Range(wsData.Cells(1, 1), wsData.Cells(lastRow, lastCol))
+    
+    ' Remove old pivot sheet if it exists
+    On Error Resume Next
+    Application.DisplayAlerts = False
+    wb.Worksheets("Adidas_Pivots").Delete
+    Application.DisplayAlerts = True
+    On Error GoTo 0
+    
+    ' Create new pivot sheet
+    Set wsPivots = wb.Worksheets.Add
+    wsPivots.Name = "Adidas_Pivots"
+    
+    ' Create pivot cache
+    Set pc = wb.PivotCaches.Create(SourceType:=xlDatabase, SourceData:=srcData)
+    
+    ' ==================================================
+    ' SECTION 1 — KPI ROW (5 KPIs)
+    ' ==================================================
+    
+    Dim ptKPI As PivotTable
+    Dim ptTopProd As PivotTable
+    
+    ' KPI: Total Sales, Units Sold, Operating Profit, Avg Operating Margin
+    ' Block 1: Columns A:I
+    Set ptKPI = wsPivots.PivotTables.Add(pc, wsPivots.Range("A3"), "ptKPI_Totals")
+    
+    With ptKPI
+        .RowAxisLayout xlTabularRow
+        
+        .AddDataField .PivotFields("Total Sales"), "Sum of Total Sales", xlSum
+        .AddDataField .PivotFields("Units Sold"), "Sum of Units Sold", xlSum
+        .AddDataField .PivotFields("Operating Profit"), "Sum of Operating Profit", xlSum
+        .AddDataField .PivotFields("Operating Margin"), "Average Operating Margin", xlAverage
+        
+        .DataFields("Sum of Total Sales").NumberFormat = "#,##0"
+        .DataFields("Sum of Units Sold").NumberFormat = "#,##0"
+        .DataFields("Sum of Operating Profit").NumberFormat = "#,##0"
+        .DataFields("Average Operating Margin").NumberFormat = "0.00%"
+    End With
+    
+    ' KPI: Top Product Category (by Sales)
+    ' Block 2: Columns J:R
+    Set ptTopProd = wsPivots.PivotTables.Add(pc, wsPivots.Range("J3"), "ptKPI_TopProduct")
+    
+    With ptTopProd
+        .RowAxisLayout xlTabularRow
+        
+        With .PivotFields("Product")
+            .Orientation = xlRowField
+            .Position = 1
+        End With
+        
+        .AddDataField .PivotFields("Total Sales"), "Sum of Total Sales", xlSum
+        .DataFields("Sum of Total Sales").NumberFormat = "#,##0"
+        
+        .PivotFields("Product").AutoSort xlDescending, "Sum of Total Sales"
+    End With
+    
+    ' ==================================================
+    ' SECTION 2 — SALES PERFORMANCE (2 Charts)
+    ' ==================================================
+    
+    Dim ptSalesTrend As PivotTable
+    Dim ptUnitsTrend As PivotTable
+    
+    ' Chart 1: Sales Trend Over Time (Invoice Date vs Total Sales)
+    ' Block 1: Columns A:I
+    Set ptSalesTrend = wsPivots.PivotTables.Add(pc, wsPivots.Range("A12"), "ptSalesTrend")
+    
+    With ptSalesTrend
+        .RowAxisLayout xlTabularRow
+        
+        With .PivotFields("Invoice Date")
+            .Orientation = xlRowField
+            .Position = 1
+        End With
+        
+        .AddDataField .PivotFields("Total Sales"), "Sum of Total Sales", xlSum
+        .DataFields("Sum of Total Sales").NumberFormat = "#,##0"
+    End With
+    
+    ' Chart 2: Units Sold Trend (Invoice Date vs Units Sold)
+    ' Block 2: Columns J:R
+    Set ptUnitsTrend = wsPivots.PivotTables.Add(pc, wsPivots.Range("J12"), "ptUnitsTrend")
+    
+    With ptUnitsTrend
+        .RowAxisLayout xlTabularRow
+        
+        With .PivotFields("Invoice Date")
+            .Orientation = xlRowField
+            .Position = 1
+        End With
+        
+        .AddDataField .PivotFields("Units Sold"), "Sum of Units Sold", xlSum
+        .DataFields("Sum of Units Sold").NumberFormat = "#,##0"
+    End With
+    
+    ' ==================================================
+    ' SECTION 3 — GEOGRAPHY ANALYSIS (1 Chart)
+    ' ==================================================
+    
+    Dim ptRegionSales As PivotTable
+    
+    ' Chart 3: Sales by Region
+    ' Block 3: Columns S:AA
+    Set ptRegionSales = wsPivots.PivotTables.Add(pc, wsPivots.Range("S12"), "ptRegionSales")
+    
+    With ptRegionSales
+        .RowAxisLayout xlTabularRow
+        
+        With .PivotFields("Region")
+            .Orientation = xlRowField
+            .Position = 1
+        End With
+        
+        .AddDataField .PivotFields("Total Sales"), "Sum of Total Sales", xlSum
+        .DataFields("Sum of Total Sales").NumberFormat = "#,##0"
+    End With
+    
+    ' ==================================================
+    ' SECTION 4 — PRODUCT PERFORMANCE (2 Charts)
+    ' ==================================================
+    
+    Dim ptProductSales As PivotTable
+    Dim ptProductProfit As PivotTable
+    
+    ' Chart 4: Sales by Product Category
+    ' Block 1: Columns A:I
+    Set ptProductSales = wsPivots.PivotTables.Add(pc, wsPivots.Range("G30"), "ptProductSales")
+    
+    With ptProductSales
+        .RowAxisLayout xlTabularRow
+        
+        With .PivotFields("Product")
+            .Orientation = xlRowField
+            .Position = 1
+        End With
+        
+        .AddDataField .PivotFields("Total Sales"), "Sum of Total Sales", xlSum
+        .DataFields("Sum of Total Sales").NumberFormat = "#,##0"
+    End With
+    
+    ' Chart 5: Operating Profit by Product Category
+    ' Block 2: Columns J:R
+    Set ptProductProfit = wsPivots.PivotTables.Add(pc, wsPivots.Range("M30"), "ptProductProfit")
+    
+    With ptProductProfit
+        .RowAxisLayout xlTabularRow
+        
+        With .PivotFields("Product")
+            .Orientation = xlRowField
+            .Position = 1
+        End With
+        
+        .AddDataField .PivotFields("Operating Profit"), "Sum of Operating Profit", xlSum
+        .DataFields("Sum of Operating Profit").NumberFormat = "#,##0"
+    End With
+    
+    ' ==================================================
+    ' SECTION 5 — RETAILER & SALES METHOD (2 Charts)
+    ' ==================================================
+    
+    Dim ptRetailerSales As PivotTable
+    Dim ptSalesMethod As PivotTable
+    
+    ' Chart 6: Sales by Retailer
+    ' Block 3: Columns S:AA
+    Set ptRetailerSales = wsPivots.PivotTables.Add(pc, wsPivots.Range("S30"), "ptRetailerSales")
+    
+    With ptRetailerSales
+        .RowAxisLayout xlTabularRow
+        
+        With .PivotFields("Retailer")
+            .Orientation = xlRowField
+            .Position = 1
+        End With
+        
+        .AddDataField .PivotFields("Total Sales"), "Sum of Total Sales", xlSum
+        .DataFields("Sum of Total Sales").NumberFormat = "#,##0"
+    End With
+    
+    ' Chart 7: Sales Method Performance (In-store vs Online)
+    ' Block 4: Columns AB:AJ
+    Set ptSalesMethod = wsPivots.PivotTables.Add(pc, wsPivots.Range("AB30"), "ptSalesMethod")
+    
+    With ptSalesMethod
+        .RowAxisLayout xlTabularRow
+        
+        With .PivotFields("Sales Method")
+            .Orientation = xlRowField
+            .Position = 1
+        End With
+        
+        .AddDataField .PivotFields("Total Sales"), "Sum of Total Sales", xlSum
+        .DataFields("Sum of Total Sales").NumberFormat = "#,##0"
+    End With
+    
+    MsgBox "All PivotTables for KPIs and charts created on 'Adidas_Pivots'.", vbInformation
+
+End Sub
+
